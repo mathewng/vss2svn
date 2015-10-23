@@ -597,7 +597,7 @@ namespace Hpdi.Vss2Git
                     {
                         ++rootLength;
                     }
-                    var subpath = projectSpec.Substring(rootLength);
+                    var subpath = projectSpec.Substring(Math.Min(rootLength, projectSpec.Length));
                     var subprojectNames = subpath.Split('/');
                     var projectInfo = rootInfo;
                     foreach (var subprojectName in subprojectNames)
