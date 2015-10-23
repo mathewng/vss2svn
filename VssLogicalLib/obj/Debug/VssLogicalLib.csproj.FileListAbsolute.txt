@@ -1,0 +1,9 @@
+E:\repositories\vss2git\VssLogicalLib\bin\Debug\Hpdi.VssLogicalLib.dll
+E:\repositories\vss2git\VssLogicalLib\bin\Debug\Hpdi.VssLogicalLib.pdb
+E:\repositories\vss2git\VssLogicalLib\bin\Debug\Hpdi.VssPhysicalLib.dll
+E:\repositories\vss2git\VssLogicalLib\bin\Debug\Hpdi.HashLib.dll
+E:\repositories\vss2git\VssLogicalLib\bin\Debug\Hpdi.VssPhysicalLib.pdb
+E:\repositories\vss2git\VssLogicalLib\bin\Debug\Hpdi.HashLib.pdb
+E:\repositories\vss2git\VssLogicalLib\obj\Debug\VssLogicalLib.csprojResolveAssemblyReference.cache
+E:\repositories\vss2git\VssLogicalLib\obj\Debug\Hpdi.VssLogicalLib.dll
+E:\repositories\vss2git\VssLogicalLib\obj\Debug\Hpdi.VssLogicalLib.pdb

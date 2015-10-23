@@ -115,7 +115,7 @@ namespace Hpdi.Vss2Git
                     {
                         gitExporter.CommitEncoding = encoding;
                     }
-                    gitExporter.ExportToGit(outDirTextBox.Text);
+                    gitExporter.ExportToGit(outDirTextBox.Text, InheritProjectDirCheckBox.Checked);
                 }
 
                 workQueue.Idle += delegate

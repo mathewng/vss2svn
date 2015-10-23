@@ -70,7 +70,7 @@ namespace Hpdi.Vss2Git
             this.changesetBuilder = changesetBuilder;
         }
 
-        public void ExportToGit(string repoPath)
+        public void ExportToGit(string repoPath, bool inheritProjectDir)
         {
             workQueue.AddLast(delegate(object work)
             {
@@ -119,7 +119,7 @@ namespace Hpdi.Vss2Git
                 // create mappings for root projects
                 foreach (var rootProject in revisionAnalyzer.RootProjects)
                 {
-                    var rootPath = VssPathMapper.GetWorkingPath(repoPath, rootProject.Path);
+                    var rootPath = inheritProjectDir?VssPathMapper.GetWorkingPath(repoPath, rootProject.Path):repoPath;
                     pathMapper.SetProjectPath(rootProject.PhysicalName, rootPath, rootProject.Path);
                 }
 
