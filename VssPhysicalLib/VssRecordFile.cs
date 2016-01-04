@@ -163,14 +163,17 @@ namespace Hpdi.VssPhysicalLib
 
         private static byte[] ReadFile(string filename)
         {
+            return File.ReadAllBytes(filename);
+            /*
             byte[] data;
             using (var stream = new FileStream(filename,
-                FileMode.Open, FileAccess.Read, FileShare.Read))
+                FileMode.Open, FileAccess.Read, FileShare.Read, 32 * 1024, FileOptions.SequentialScan))
             {
                 data = new byte[stream.Length];
                 stream.Read(data, 0, data.Length);
             }
             return data;
+            */
         }
     }
 }

@@ -33,7 +33,7 @@ namespace Hpdi.VssLogicalLib
         public Stream GetContents()
         {
             Stream dataFile = new FileStream(item.DataPath,
-                FileMode.Open, FileAccess.Read, FileShare.Read);
+                FileMode.Open, FileAccess.Read, FileShare.Read, 128 * 1024, false);
 
             var itemFile = item.ItemFile;
             var lastRev = itemFile.GetLastRevision();

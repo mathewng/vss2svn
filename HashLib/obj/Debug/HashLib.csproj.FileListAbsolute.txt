@@ -3,3 +3,8 @@ E:\repositories\vss2git\HashLib\bin\Debug\Hpdi.HashLib.pdb
 E:\repositories\vss2git\HashLib\obj\Debug\HashLib.csprojResolveAssemblyReference.cache
 E:\repositories\vss2git\HashLib\obj\Debug\Hpdi.HashLib.dll
 E:\repositories\vss2git\HashLib\obj\Debug\Hpdi.HashLib.pdb
+E:\repositories\vss2svn\HashLib\bin\Debug\Hpdi.HashLib.dll
+E:\repositories\vss2svn\HashLib\bin\Debug\Hpdi.HashLib.pdb
+E:\repositories\vss2svn\HashLib\obj\Debug\HashLib.csprojResolveAssemblyReference.cache
+E:\repositories\vss2svn\HashLib\obj\Debug\Hpdi.HashLib.dll
+E:\repositories\vss2svn\HashLib\obj\Debug\Hpdi.HashLib.pdb
