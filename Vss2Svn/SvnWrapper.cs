@@ -121,16 +121,8 @@ namespace Hpdi.Vss2Svn
 
             using (var client = new SvnClient())
             {
-                try
-                {
-                    SvnUI.Bind(client, parentWindow);
-                    return client.Add(path, new SvnAddArgs { AddParents = false, Depth = SvnDepth.Infinity, Force = true });
-
-                }
-                catch (SvnException e)
-                {
-                    MessageBox.Show(string.Format("{0} Error Code: {1}{2}", e.Message, e.SvnErrorCode, Environment.NewLine), "SVN Operation Failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
+                SvnUI.Bind(client, parentWindow);
+                return client.Add(path, new SvnAddArgs { AddParents = false, Depth = SvnDepth.Infinity, Force = true });
             }
 
             return false;
@@ -173,38 +165,31 @@ namespace Hpdi.Vss2Svn
 
             using (var client = new SvnClient())
             {
-                try
+                SvnUI.Bind(client, parentWindow);
+
+                var statusList = (Collection<SvnStatusEventArgs>)null;
+                var svnStatusArgs = new SvnStatusArgs { Depth = SvnDepth.Infinity, IgnoreExternals = false, KeepDepth = false, RetrieveIgnoredEntries = false };
+
+                if (client.GetStatus(useSvnStandardDirStructure ? trunkPath : workingCopyPath, svnStatusArgs, out statusList))
                 {
-                    SvnUI.Bind(client, parentWindow);
-
-                    var statusList = (Collection<SvnStatusEventArgs>)null;
-                    var svnStatusArgs = new SvnStatusArgs { Depth = SvnDepth.Infinity, IgnoreExternals = false, KeepDepth = false, RetrieveIgnoredEntries = false };
-
-                    if (client.GetStatus(useSvnStandardDirStructure ? trunkPath : workingCopyPath, svnStatusArgs, out statusList))
+                    overallStatus = statusList.Select(svnStatusEventArg =>
                     {
-                        overallStatus = statusList.Select(svnStatusEventArg =>
+                        switch (svnStatusEventArg.LocalNodeStatus)
                         {
-                            switch (svnStatusEventArg.LocalNodeStatus)
-                            {
-                                case SvnStatus.Missing:
-                                    logger.WriteLine("Commit: Deleting file {0} due to status = {1}", svnStatusEventArg.FullPath, svnStatusEventArg.LocalNodeStatus);
-                                    return client.Delete(svnStatusEventArg.FullPath, new SvnDeleteArgs { KeepLocal = false, Force = false });
-                                case SvnStatus.NotVersioned:
-                                    logger.WriteLine("Commit: Adding file {0} due to status = {1}", svnStatusEventArg.FullPath, svnStatusEventArg.LocalNodeStatus);
-                                    return client.Add(svnStatusEventArg.FullPath, new SvnAddArgs { AddParents = false, Depth = SvnDepth.Infinity, Force = false });
-                                default:
-                                    return true;
-                            }
-                        })
-                        .Aggregate(true, (state, val) => state &= val);
-                    }
-                    else
-                        overallStatus = false;
+                            case SvnStatus.Missing:
+                                logger.WriteLine("Commit: Deleting file {0} due to status = {1}", svnStatusEventArg.FullPath, svnStatusEventArg.LocalNodeStatus);
+                                return client.Delete(svnStatusEventArg.FullPath, new SvnDeleteArgs { KeepLocal = false, Force = false });
+                            case SvnStatus.NotVersioned:
+                                logger.WriteLine("Commit: Adding file {0} due to status = {1}", svnStatusEventArg.FullPath, svnStatusEventArg.LocalNodeStatus);
+                                return client.Add(svnStatusEventArg.FullPath, new SvnAddArgs { AddParents = false, Depth = SvnDepth.Infinity, Force = false });
+                            default:
+                                return true;
+                        }
+                    })
+                    .Aggregate(true, (state, val) => state &= val);
                 }
-                catch (SvnException e)
-                {
-                    MessageBox.Show(string.Format("{0} Error Code: {1}{2}", e.Message, e.SvnErrorCode, Environment.NewLine), "SVN Operation Failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
+                else
+                    overallStatus = false;
             }
 
             return overallStatus;
@@ -217,15 +202,8 @@ namespace Hpdi.Vss2Svn
             */
             using (var client = new SvnClient())
             {
-                try
-                {
-                    SvnUI.Bind(client, parentWindow);
-                    var result = client.Delete(path, new SvnDeleteArgs { Force = true, KeepLocal = false });
-                }
-                catch (SvnException e)
-                {
-                    MessageBox.Show(string.Format("{0} Error Code: {1}{2}", e.Message, e.SvnErrorCode, Environment.NewLine), "SVN Operation Failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
+                SvnUI.Bind(client, parentWindow);
+                var result = client.Delete(path, new SvnDeleteArgs { Force = true, KeepLocal = false });
             }
         }
 
@@ -236,15 +214,8 @@ namespace Hpdi.Vss2Svn
             */
             using (var client = new SvnClient())
             {
-                try
-                {
-                    SvnUI.Bind(client, parentWindow);
-                    var result = client.Move(sourcePath, destPath, new SvnMoveArgs { AllowMixedRevisions = false, AlwaysMoveAsChild = false, CreateParents = true, Force = true, MetaDataOnly = false });
-                }
-                catch (SvnException e)
-                {
-                    MessageBox.Show(string.Format("{0} Error Code: {1}{2}", e.Message, e.SvnErrorCode, Environment.NewLine), "SVN Operation Failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
+                SvnUI.Bind(client, parentWindow);
+                var result = client.Move(sourcePath, destPath, new SvnMoveArgs { AllowMixedRevisions = false, AlwaysMoveAsChild = false, CreateParents = true, Force = true, MetaDataOnly = false });
             }
         }
 
@@ -349,38 +320,30 @@ namespace Hpdi.Vss2Svn
             }
             using (var client = new SvnClient())
             {
-                try
-                {
-                    SvnUI.Bind(client, parentWindow);
-                    var svnCommitArgs = new SvnCommitArgs { LogMessage = comment };
+                SvnUI.Bind(client, parentWindow);
+                var svnCommitArgs = new SvnCommitArgs { LogMessage = comment };
 
-                    var svnCommitResult = (SvnCommitResult)null;
-                    var result = client.Commit(useSvnStandardDirStructure ? trunkPath : workingCopyPath, svnCommitArgs, out svnCommitResult);
-                    // commit without files results in result=true and svnCommitResult=null
-                    if (svnCommitResult != null)
+                var svnCommitResult = (SvnCommitResult)null;
+                var result = client.Commit(useSvnStandardDirStructure ? trunkPath : workingCopyPath, svnCommitArgs, out svnCommitResult);
+                // commit without files results in result=true and svnCommitResult=null
+                if (svnCommitResult != null)
+                {
+                    if (result)
                     {
-                        if (result)
-                        {
 
-                            var workingCopyUri = client.GetUriFromWorkingCopy(useSvnStandardDirStructure ? trunkPath : workingCopyPath);
+                        var workingCopyUri = client.GetUriFromWorkingCopy(useSvnStandardDirStructure ? trunkPath : workingCopyPath);
 
-                            result &= client.SetRevisionProperty(svnCommitResult.RepositoryRoot, new SvnRevision(svnCommitResult.Revision), SvnPropertyNames.SvnAuthor, authorName);
-                            result &= client.SetRevisionProperty(svnCommitResult.RepositoryRoot, new SvnRevision(svnCommitResult.Revision), SvnPropertyNames.SvnDate, SvnPropertyNames.FormatDate(localTime));
+                        result &= client.SetRevisionProperty(svnCommitResult.RepositoryRoot, new SvnRevision(svnCommitResult.Revision), SvnPropertyNames.SvnAuthor, authorName);
+                        result &= client.SetRevisionProperty(svnCommitResult.RepositoryRoot, new SvnRevision(svnCommitResult.Revision), SvnPropertyNames.SvnDate, SvnPropertyNames.FormatDate(localTime));
 
-                            result &= client.Update(workingCopyPath, new SvnUpdateArgs { AddsAsModifications = false, AllowObstructions = false, Depth = SvnDepth.Infinity, IgnoreExternals = true, KeepDepth = true, Revision = SvnRevision.Head, UpdateParents = false });
-                        }
-                        else
-                        {
-                            MessageBox.Show(string.Format("{0} Error Code: {1}{2}", svnCommitResult.PostCommitError, "", Environment.NewLine), "SVN Commit Failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        }
+                        result &= client.Update(workingCopyPath, new SvnUpdateArgs { AddsAsModifications = false, AllowObstructions = false, Depth = SvnDepth.Infinity, IgnoreExternals = true, KeepDepth = true, Revision = SvnRevision.Head, UpdateParents = false });
                     }
-                    return result;
-
+                    else
+                    {
+                        MessageBox.Show(string.Format("{0} Error Code: {1}{2}", svnCommitResult.PostCommitError, "", Environment.NewLine), "SVN Commit Failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
                 }
-                catch (SvnException e)
-                {
-                    MessageBox.Show(string.Format("{0} Error Code: {1}{2}", e.Message, e.SvnErrorCode, Environment.NewLine), "SVN Operation Failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
+                return result;
             }
             return false;
         }
@@ -389,15 +352,8 @@ namespace Hpdi.Vss2Svn
         {
             using (var client = new SvnClient())
             {
-                try
-                {
-                    SvnUI.Bind(client, parentWindow);
-                    return client.Update(path, new SvnUpdateArgs { AddsAsModifications = false, AllowObstructions = false, Depth = SvnDepth.Infinity, IgnoreExternals = true, KeepDepth = true, Revision = SvnRevision.Head, UpdateParents = false });
-                }
-                catch (SvnException e)
-                {
-                    MessageBox.Show(string.Format("{0} Error Code: {1}{2}", e.Message, e.SvnErrorCode, Environment.NewLine), "SVN Operation Failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
+                SvnUI.Bind(client, parentWindow);
+                return client.Update(path, new SvnUpdateArgs { AddsAsModifications = false, AllowObstructions = false, Depth = SvnDepth.Infinity, IgnoreExternals = true, KeepDepth = true, Revision = SvnRevision.Head, UpdateParents = false });
             }
 
             return false;
@@ -407,118 +363,74 @@ namespace Hpdi.Vss2Svn
         {
             using (var client = new SvnClient())
             {
-                try
+                SvnUI.Bind(client, parentWindow);
+
+                var codeBasePath = useSvnStandardDirStructure ? this.trunkPath : workingCopyPath;
+                var relativePath = taggedPath.StartsWith(codeBasePath) ? taggedPath.Substring(codeBasePath.Length) : null;
+                if (relativePath == null || client.GetUriFromWorkingCopy(taggedPath) == null)
+                    throw new ArgumentException(string.Format("invalid path {0}", taggedPath));
+
+                var fullLabelPath = Path.Combine(labelPath, name + relativePath);
+
+                Uri repositoryRootUri = client.GetUriFromWorkingCopy(workingCopyPath);
+
+                var codeBaseUri = client.GetUriFromWorkingCopy(codeBasePath);
+                var labelBaseUri = client.GetUriFromWorkingCopy(labelPath);
+
+                var relativeSourceUri = new Uri(taggedPath.Substring(workingCopyPath.Length), UriKind.Relative);
+                relativeSourceUri = repositoryRootUri.MakeRelativeUri(new Uri(repositoryRootUri, relativeSourceUri));
+
+                var relativeLabelUri = new Uri(fullLabelPath.Substring(workingCopyPath.Length), UriKind.Relative);
+                relativeLabelUri = repositoryRootUri.MakeRelativeUri(new Uri(repositoryRootUri, relativeLabelUri));
+
+                var sourceUri = client.GetUriFromWorkingCopy(taggedPath);
+                var labelUri = new Uri(labelBaseUri, name + "/" + sourceUri.ToString().Substring(codeBaseUri.ToString().Length));
+
+                var fullLabelPathExists = client.GetUriFromWorkingCopy(fullLabelPath) != null;
+
+                // check intermediate parents
+                var intermediateParentNames = labelUri.ToString().Substring(labelBaseUri.ToString().Length).Split(new char[] { '/' }, StringSplitOptions.RemoveEmptyEntries).Reverse().Skip(1).Reverse();
+                var intermediateParentRelativeUriToCreate = new List<string>();
                 {
-                    SvnUI.Bind(client, parentWindow);
-
-                    var codeBasePath = useSvnStandardDirStructure ? this.trunkPath : workingCopyPath;
-                    var relativePath = taggedPath.StartsWith(codeBasePath) ? taggedPath.Substring(codeBasePath.Length) : null;
-                    if (relativePath == null || client.GetUriFromWorkingCopy(taggedPath) == null)
-                        throw new ArgumentException(string.Format("invalid path {0}", taggedPath));
-
-                    var fullLabelPath = Path.Combine(labelPath, name + relativePath);
-                    
-                    Uri repositoryRootUri = client.GetUriFromWorkingCopy(workingCopyPath);
-
-                    var codeBaseUri = client.GetUriFromWorkingCopy(codeBasePath);
-                    var labelBaseUri = client.GetUriFromWorkingCopy(labelPath);
-
-                    var relativeSourceUri = new Uri(taggedPath.Substring(workingCopyPath.Length), UriKind.Relative);
-                    relativeSourceUri = repositoryRootUri.MakeRelativeUri(new Uri(repositoryRootUri, relativeSourceUri));
-
-                    var relativeLabelUri = new Uri(fullLabelPath.Substring(workingCopyPath.Length), UriKind.Relative);
-                    relativeLabelUri = repositoryRootUri.MakeRelativeUri(new Uri(repositoryRootUri, relativeLabelUri));
-
-                    var sourceUri = client.GetUriFromWorkingCopy(taggedPath);
-                    var labelUri = new Uri(labelBaseUri, name + "/" + sourceUri.ToString().Substring(codeBaseUri.ToString().Length));
-
-                    var fullLabelPathExists = client.GetUriFromWorkingCopy(fullLabelPath) != null;
-
-                    // check intermediate parents
-                    var intermediateParentNames = labelUri.ToString().Substring(labelBaseUri.ToString().Length).Split(new char[] { '/' }, StringSplitOptions.RemoveEmptyEntries).Reverse().Skip(1).Reverse();
-                    var intermediateParentRelativeUriToCreate = new List<string>();
+                    var intermediatePath = labelPath;
+                    var intermediateUriPath = repositoryRootUri.MakeRelativeUri(labelBaseUri).ToString();
+                    foreach (var parent in intermediateParentNames)
                     {
-                        var intermediatePath = labelPath;
-                        var intermediateUriPath = repositoryRootUri.MakeRelativeUri(labelBaseUri).ToString();
-                        foreach (var parent in intermediateParentNames)
-                        {
-                            intermediatePath = Path.Combine(intermediatePath, parent);
-                            intermediateUriPath += parent + "/";
-                            if (client.GetUriFromWorkingCopy(intermediatePath) == null)
-                                intermediateParentRelativeUriToCreate.Add(intermediateUriPath.Substring(0, intermediateUriPath.Length - 1));
-                        }
+                        intermediatePath = Path.Combine(intermediatePath, parent);
+                        intermediateUriPath += parent + "/";
+                        if (client.GetUriFromWorkingCopy(intermediatePath) == null)
+                            intermediateParentRelativeUriToCreate.Add(intermediateUriPath.Substring(0, intermediateUriPath.Length - 1));
                     }
-
-
-                    // perform svn copy or svn delete + svn copy if necessary
-                    var result = true;
-                    var svnCommitResult = (SvnCommitResult)null;
-
-                    client.RepositoryOperation(repositoryRootUri, new SvnRepositoryOperationArgs { LogMessage = comment }, delegate (SvnMultiCommandClient muccClient)
-                    {
-                        // if label path already exists, delete first
-                        if (fullLabelPathExists)
-                            result &= muccClient.Delete(Uri.UnescapeDataString(relativeLabelUri.ToString()));
-
-                        // create intermediate parents if necessary
-                        foreach (var parentRelativeUri in intermediateParentRelativeUriToCreate)
-                            result &= muccClient.CreateDirectory(Uri.UnescapeDataString(parentRelativeUri));
-
-                        result &= muccClient.Copy(Uri.UnescapeDataString(relativeSourceUri.ToString()), Uri.UnescapeDataString(relativeLabelUri.ToString()));
-                        
-
-                    }, out svnCommitResult);
-                    /*
-                    using (var muccClient = new SvnMultiCommandClient(repositoryRootUri, new SvnRepositoryOperationArgs { LogMessage = comment }))
-                    {
-                        var relativeSourceUri = new Uri(sourceUri.ToString(), UriKind.Relative);
-                        var relativeLabelUri = new Uri(labelUri.ToString(), UriKind.Relative);
-
-
-
-                        // if label path already exists, delete first
-                        if (client.GetUriFromWorkingCopy(fullLabelPath) != null)
-                            result &= muccClient.Delete(relativeLabelUri.ToString());
-
-                        result &= muccClient.Copy(relativeSourceUri.ToString(), relativeLabelUri.ToString());
-                        result &= muccClient.Commit(out svnCommitResult);
-                    }
-                    */
-                    if (result)
-                    {
-                        result &= client.SetRevisionProperty(svnCommitResult.RepositoryRoot, new SvnRevision(svnCommitResult.Revision), SvnPropertyNames.SvnAuthor, taggerName);
-                        result &= client.SetRevisionProperty(svnCommitResult.RepositoryRoot, new SvnRevision(svnCommitResult.Revision), SvnPropertyNames.SvnDate, SvnPropertyNames.FormatDate(localTime));
-                    }
-
-                    result &= client.Update(workingCopyPath, new SvnUpdateArgs { AddsAsModifications = false, AllowObstructions = false, Depth = SvnDepth.Infinity, IgnoreExternals = true, KeepDepth = true, Revision = SvnRevision.Head, UpdateParents = false });
-
-
-                    /*
-                    var svnCommitResult = (SvnCommitResult)null;
-                    // label already exists. we do a 2-step operation. delete followed by a copy.
-                    if (client.GetUriFromWorkingCopy(fullLabelPath) != null)
-                    {
-                        result &= client.RemoteDelete(labelUri, new SvnDeleteArgs { Force = true, KeepLocal = false, LogMessage = comment }, out svnCommitResult);
-                        if (result)
-                        {
-                            result &= client.SetRevisionProperty(svnCommitResult.RepositoryRoot, new SvnRevision(svnCommitResult.Revision), SvnPropertyNames.SvnAuthor, taggerName);
-                            result &= client.SetRevisionProperty(svnCommitResult.RepositoryRoot, new SvnRevision(svnCommitResult.Revision), SvnPropertyNames.SvnDate, SvnPropertyNames.FormatDate(localTime));
-                        }
-                    }
-                    result &= client.RemoteCopy(sourceUri, labelUri, new SvnCopyArgs { AlwaysCopyAsChild = false, CreateParents = true, IgnoreExternals = true, LogMessage = comment, MetaDataOnly = false, PinExternals = false, Revision = SvnRevision.Head }, out svnCommitResult);
-                    if (result)
-                    {
-                        result &= client.SetRevisionProperty(svnCommitResult.RepositoryRoot, new SvnRevision(svnCommitResult.Revision), SvnPropertyNames.SvnAuthor, taggerName);
-                        result &= client.SetRevisionProperty(svnCommitResult.RepositoryRoot, new SvnRevision(svnCommitResult.Revision), SvnPropertyNames.SvnDate, SvnPropertyNames.FormatDate(localTime));
-                    }
-                    result &= client.Update(workingCopyPath, new SvnUpdateArgs { AddsAsModifications = false, AllowObstructions = false, Depth = SvnDepth.Infinity, IgnoreExternals = true, KeepDepth = true, Revision = SvnRevision.Head, UpdateParents = false });
-                    */
-
                 }
-                catch (SvnException e)
+
+
+                // perform svn copy or svn delete + svn copy if necessary
+                var result = true;
+                var svnCommitResult = (SvnCommitResult)null;
+
+                client.RepositoryOperation(repositoryRootUri, new SvnRepositoryOperationArgs { LogMessage = comment }, delegate (SvnMultiCommandClient muccClient)
                 {
-                    MessageBox.Show(string.Format("{0} Error Code: {1}{2}", e.Message, e.SvnErrorCode, Environment.NewLine), "SVN Operation Failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    // if label path already exists, delete first
+                    if (fullLabelPathExists)
+                        result &= muccClient.Delete(Uri.UnescapeDataString(relativeLabelUri.ToString()));
+
+                    // create intermediate parents if necessary
+                    foreach (var parentRelativeUri in intermediateParentRelativeUriToCreate)
+                        result &= muccClient.CreateDirectory(Uri.UnescapeDataString(parentRelativeUri));
+
+                    result &= muccClient.Copy(Uri.UnescapeDataString(relativeSourceUri.ToString()), Uri.UnescapeDataString(relativeLabelUri.ToString()));
+
+
+                }, out svnCommitResult);
+
+                if (result)
+                {
+                    result &= client.SetRevisionProperty(svnCommitResult.RepositoryRoot, new SvnRevision(svnCommitResult.Revision), SvnPropertyNames.SvnAuthor, taggerName);
+                    result &= client.SetRevisionProperty(svnCommitResult.RepositoryRoot, new SvnRevision(svnCommitResult.Revision), SvnPropertyNames.SvnDate, SvnPropertyNames.FormatDate(localTime));
                 }
+
+                result &= client.Update(workingCopyPath, new SvnUpdateArgs { AddsAsModifications = false, AllowObstructions = false, Depth = SvnDepth.Infinity, IgnoreExternals = true, KeepDepth = true, Revision = SvnRevision.Head, UpdateParents = false });
+
             }
         }
 
@@ -545,29 +457,22 @@ namespace Hpdi.Vss2Svn
             */
             using (var client = new SvnClient())
             {
-                try
-                {
-                    SvnUI.Bind(client, parentWindow);
-                    var svnCopyArgs = new SvnCopyArgs { LogMessage = comment, CreateParents = true, AlwaysCopyAsChild = false };
+                SvnUI.Bind(client, parentWindow);
+                var svnCopyArgs = new SvnCopyArgs { LogMessage = comment, CreateParents = true, AlwaysCopyAsChild = false };
 
-                    var workingCopyUri = client.GetUriFromWorkingCopy(workingCopyPath);
-                    var tagsUri = client.GetUriFromWorkingCopy(tagPath);
-                    var sourceUri = useSvnStandardDirStructure ? client.GetUriFromWorkingCopy(trunkPath) : workingCopyUri;
-                    var tagUri = new Uri(useSvnStandardDirStructure ? tagsUri : workingCopyUri, name);
+                var workingCopyUri = client.GetUriFromWorkingCopy(workingCopyPath);
+                var tagsUri = client.GetUriFromWorkingCopy(tagPath);
+                var sourceUri = useSvnStandardDirStructure ? client.GetUriFromWorkingCopy(trunkPath) : workingCopyUri;
+                var tagUri = new Uri(useSvnStandardDirStructure ? tagsUri : workingCopyUri, name);
 
-                    var svnCommitResult = (SvnCommitResult)null;
-                    var result = client.RemoteCopy(sourceUri, tagUri, svnCopyArgs, out svnCommitResult);
-                    if (result)
-                    {
-                        result &= client.SetRevisionProperty(svnCommitResult.RepositoryRoot, new SvnRevision(svnCommitResult.Revision), SvnPropertyNames.SvnAuthor, taggerName);
-                        result &= client.SetRevisionProperty(svnCommitResult.RepositoryRoot, new SvnRevision(svnCommitResult.Revision), SvnPropertyNames.SvnDate, SvnPropertyNames.FormatDate(localTime));
-                    }
-                    result &= client.Update(workingCopyPath, new SvnUpdateArgs { AddsAsModifications = false, AllowObstructions = false, Depth = SvnDepth.Infinity, IgnoreExternals = true, KeepDepth = true, Revision = SvnRevision.Head, UpdateParents = false });
-                }
-                catch (SvnException e)
+                var svnCommitResult = (SvnCommitResult)null;
+                var result = client.RemoteCopy(sourceUri, tagUri, svnCopyArgs, out svnCommitResult);
+                if (result)
                 {
-                    MessageBox.Show(string.Format("{0} Error Code: {1}{2}", e.Message, e.SvnErrorCode, Environment.NewLine), "SVN Operation Failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    result &= client.SetRevisionProperty(svnCommitResult.RepositoryRoot, new SvnRevision(svnCommitResult.Revision), SvnPropertyNames.SvnAuthor, taggerName);
+                    result &= client.SetRevisionProperty(svnCommitResult.RepositoryRoot, new SvnRevision(svnCommitResult.Revision), SvnPropertyNames.SvnDate, SvnPropertyNames.FormatDate(localTime));
                 }
+                result &= client.Update(workingCopyPath, new SvnUpdateArgs { AddsAsModifications = false, AllowObstructions = false, Depth = SvnDepth.Infinity, IgnoreExternals = true, KeepDepth = true, Revision = SvnRevision.Head, UpdateParents = false });
             }
         }
 
