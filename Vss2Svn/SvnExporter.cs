@@ -228,11 +228,11 @@ namespace Hpdi.Vss2Svn
                 stopwatch.Stop();
 
                 logger.WriteSectionSeparator();
-                logger.WriteLine("Svn export complete in {0:HH:mm:ss}", new DateTime(stopwatch.ElapsedTicks));
+                logger.WriteLine("SVN export complete in {0:HH:mm:ss}", new DateTime(stopwatch.ElapsedTicks));
                 logger.WriteLine("Replay time: {0:HH:mm:ss}", new DateTime(replayStopwatch.ElapsedTicks));
-                logger.WriteLine("Svn time: {0:HH:mm:ss}", new DateTime(svn.ElapsedTime.Ticks));
-                logger.WriteLine("Svn commits: {0}", commitCount);
-                logger.WriteLine("Svn tags: {0}", tagCount);
+                logger.WriteLine("SVN time: {0:HH:mm:ss}", new DateTime(svn.ElapsedTime.Ticks));
+                logger.WriteLine("SVN commits: {0}", commitCount);
+                logger.WriteLine("SVN tags: {0}", tagCount);
             });
         }
 

@@ -146,12 +146,12 @@ namespace Hpdi.Vss2Svn.Properties {
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("False")]
-        public bool MergeAcrossDifferentUser {
+        public bool ExcludeAllDestroyedItems {
             get {
-                return ((bool)(this["MergeAcrossDifferentUser"]));
+                return ((bool)(this["ExcludeAllDestroyedItems"]));
             }
             set {
-                this["MergeAcrossDifferentUser"] = value;
+                this["ExcludeAllDestroyedItems"] = value;
             }
         }
     }

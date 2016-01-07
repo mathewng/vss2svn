@@ -67,8 +67,8 @@ namespace Hpdi.Vss2Svn
                     transcodeCheckBox.Checked ? "enabled" : "disabled");
                 logger.WriteLine("Use SVN standard dir structure: {0}",
                     useSvnDirStructureCheckBox.Checked ? "enabled" : "disabled");
-                logger.WriteLine("Combine revisions by different users: {0}",
-                    mergeAcrossDifferentUserCheckBox.Checked ? "enabled" : "disabled");
+                logger.WriteLine("Exclude all destroyed items: {0}",
+                    excludeAllDestroyedItemsCheckBox.Checked ? "enabled" : "disabled");
 
                 var df = new VssDatabaseFactory(vssDirTextBox.Text);
                 df.Encoding = encoding;
@@ -106,7 +106,7 @@ namespace Hpdi.Vss2Svn
                 changesetBuilder.AnyCommentThreshold = TimeSpan.FromSeconds((double)anyCommentUpDown.Value);
 
                 changesetBuilder.SameCommentThreshold = TimeSpan.FromSeconds((double)sameCommentUpDown.Value);
-                changesetBuilder.MergeAcrossDifferentUser = mergeAcrossDifferentUserCheckBox.Checked;
+                changesetBuilder.ExcludeAllDestroyedItems = excludeAllDestroyedItemsCheckBox.Checked;
                 changesetBuilder.BuildChangesets();
 
                 if (!string.IsNullOrEmpty(outDirTextBox.Text))
@@ -232,7 +232,7 @@ namespace Hpdi.Vss2Svn
             logTextBox.Text = settings.LogFile;
             transcodeCheckBox.Checked = settings.TranscodeComments;
             useSvnDirStructureCheckBox.Checked = settings.UseSvnStandardDirectoryStructure;
-            mergeAcrossDifferentUserCheckBox.Checked = settings.MergeAcrossDifferentUser;
+            excludeAllDestroyedItemsCheckBox.Checked = settings.ExcludeAllDestroyedItems;
             forceAnnotatedCheckBox.Checked = settings.ForceAnnotatedTags;
             anyCommentUpDown.Value = settings.AnyCommentSeconds;
             sameCommentUpDown.Value = settings.SameCommentSeconds;
@@ -248,7 +248,7 @@ namespace Hpdi.Vss2Svn
             settings.LogFile = logTextBox.Text;
             settings.TranscodeComments = transcodeCheckBox.Checked;
             settings.UseSvnStandardDirectoryStructure = useSvnDirStructureCheckBox.Checked;
-            settings.MergeAcrossDifferentUser = mergeAcrossDifferentUserCheckBox.Checked;
+            settings.ExcludeAllDestroyedItems = excludeAllDestroyedItemsCheckBox.Checked;
             settings.ForceAnnotatedTags = forceAnnotatedCheckBox.Checked;
             settings.AnyCommentSeconds = (int)anyCommentUpDown.Value;
             settings.SameCommentSeconds = (int)sameCommentUpDown.Value;

@@ -57,11 +57,11 @@ namespace Hpdi.Vss2Svn
             set { sameCommentThreshold = value; }
         }
 
-        private bool mergeAcrossDifferentUser = false;
-        public bool MergeAcrossDifferentUser
+        private bool excludeAllDestroyedItems = false;
+        public bool ExcludeAllDestroyedItems
         {
-            get { return mergeAcrossDifferentUser; }
-            set { mergeAcrossDifferentUser = value; }
+            get { return excludeAllDestroyedItems; }
+            set { excludeAllDestroyedItems = value; }
         }
 
         private string unnamedLabelFormat = "Unnamed_{0:yyyy-MM-dd_HHmmss}";
@@ -96,19 +96,31 @@ namespace Hpdi.Vss2Svn
                     for (var node = dateEntry.Value.First; node != dateEntry.Value.Last.Next; node = node.Next)
                     {
                         var revision = node.Value;
+                        
+                        // VSS Destroyed Items: skip all. This will enable merging revisions separated by destroyed items.
+                        if (excludeAllDestroyedItems)
+                        {
+                            if ((revision.Action as VssNamedAction)?.Name?.PhysicalName != null
+                                                    && revisionAnalyzer.IsDestroyed((revision.Action as VssNamedAction).Name.PhysicalName)
+                                                    && !revisionAnalyzer.Database.ItemExists((revision.Action as VssNamedAction).Name.PhysicalName))
+                            {
+                                continue;
+                            }
+                        }
+                        
+                        
 
                         // VSS Adds: fill in comments for add from create action
                         if (revision.Action.Type == VssActionType.Add && revision.Comment == null)
-                            node.Value = revision = new Revision(revision.DateTime, revision.User, revision.Item, revision.Version, FindCommentForNullCommentAction(revision), revision.Action);
+                            node.Value = revision = new Revision(revision.DateTime, revision.User, revision.Item, revision.Version, FindCorrespondingAction(revision, VssActionType.Create)?.Comment, revision.Action);
 
                         // VSS Labels: fill in empty label names as svn cannot have empty tag path.
                         if (revision.Action.Type == VssActionType.Label && string.IsNullOrEmpty(((VssLabelAction)revision.Action).Label))
                             node.Value = revision = new Revision(revision.DateTime, revision.User, revision.Item, revision.Version, revision.Comment, new VssLabelAction(string.Format(unnamedLabelFormat, revision.DateTime, ++unnamedLabelCount)));
-
-                        // VSS Creates: skip all and exclude from changeset
+                        
+                        // VSS Creates: skip all and exclude from changeset as it increases history complexity unnecessarily and the info is not useful at all. not used in exporter
                         if (revision.Action.Type == VssActionType.Create)
                             continue;
-
 
                         // determine target of project revisions
                         var actionType = revision.Action.Type;
@@ -133,61 +145,81 @@ namespace Hpdi.Vss2Svn
                         // and flush changes past time threshold
                         var pendingUser = revision.User;
                         Changeset pendingChange = null;
-                        LinkedList<string> flushedUsers = null;
+                        LinkedList<string> flushedUsers = new LinkedList<string>();
                         foreach (var userEntry in pendingChangesByUser)
                         {
                             var user = userEntry.Key;
                             var change = userEntry.Value;
-
+                        
                             // flush change if file conflict or past time threshold
                             var flush = false;
                             var timeDiff = revision.DateTime - change.DateTime;
+
+                            if (user == pendingUser)
+                            {
+                                // VSS Label: make labels on their own changeset
+                                if ((revision.Action.Type == VssActionType.Label && change.Revisions.Last.Value.Action.Type != VssActionType.Label)
+                                || (revision.Action.Type != VssActionType.Label && change.Revisions.Last.Value.Action.Type == VssActionType.Label))
+                                {
+                                    logger.WriteLine("NOTE: Splitting changeset due to label: {0}", change.Revisions.Last.Value.Action);
+                                    flush = true;
+                                }
+                                // Cannot combine due to file conflict. must be recorded as separate changes
+                                else if (!nonconflicting && change.TargetFiles.Contains(targetFile))
+                                {
+                                    logger.WriteLine("NOTE: Splitting changeset due to file conflict on {0}:", targetFile);
+                                    flush = true;
+                                }
+                                
+
+                            }
+                            else
+                            {
+
+                            }
+                            /*
                             if (!mergeAcrossDifferentUser && !HasSameUser(revision, change.Revisions.Last.Value))
                             {
                                 logger.WriteLine("NOTE: Splitting changeset due to different user: {0} != {1}", change.Revisions.Last.Value.User, revision.User);
                                 flush = true;
                             }
-                            else if (!nonconflicting && change.TargetFiles.Contains(targetFile))
+                            */
+
+                            // additional check if not flushed above
+                            if (!flush)
                             {
-                                logger.WriteLine("NOTE: Splitting changeset due to file conflict on {0}:", targetFile);
-                                flush = true;
-                            }
-                            else if ((TimeSpan.Zero == anyCommentThreshold ? TimeSpan.FromSeconds(1) : TimeSpan.Zero) + timeDiff > anyCommentThreshold)
-                            {
-                                var lastRevision = FindLastRevisionWithNonEmptyComment(change);
-                                //if (HasSameComment(revision, change.Revisions.Last.Value))
-                                if (HasSameComment(revision, lastRevision))
+                                if ((TimeSpan.Zero == anyCommentThreshold ? TimeSpan.FromSeconds(1) : TimeSpan.Zero) + timeDiff > anyCommentThreshold)
                                 {
-                                    string message;
-                                    if ((TimeSpan.Zero == sameCommentThreshold ? TimeSpan.FromSeconds(1) : TimeSpan.Zero) + timeDiff < sameCommentThreshold)
+                                    var lastRevision = FindLastRevisionWithNonEmptyComment(change);
+                                    //if (HasSameComment(revision, change.Revisions.Last.Value))
+                                    if (HasSameComment(revision, lastRevision))
                                     {
-                                        message = "Using same-comment threshold";
+                                        string message;
+                                        if ((TimeSpan.Zero == sameCommentThreshold ? TimeSpan.FromSeconds(1) : TimeSpan.Zero) + timeDiff < sameCommentThreshold)
+                                        {
+                                            message = "Using same-comment threshold";
+                                        }
+                                        else
+                                        {
+                                            message = "Splitting changeset due to same comment but exceeded threshold";
+                                            logger.WriteLine("NOTE: {0} ({1} second gap):", message, timeDiff.TotalSeconds);
+                                            flush = true;
+                                        }
                                     }
                                     else
                                     {
-                                        message = "Splitting changeset due to same comment but exceeded threshold";
-                                        logger.WriteLine("NOTE: {0} ({1} second gap):", message, timeDiff.TotalSeconds);
+                                        //logger.WriteLine("NOTE: Splitting changeset due to different comment: {0} != {1}:", change.Revisions.Last.Value.Comment, revision.Comment);
+                                        logger.WriteLine("NOTE: Splitting changeset due to different comment: {0} != {1}:", lastRevision.Comment ?? "null", revision.Comment ?? "null");
                                         flush = true;
                                     }
-                                    //logger.WriteLine("NOTE: {0} ({1} second gap):", message, timeDiff.TotalSeconds);
                                 }
-                                else
-                                {
-                                    //logger.WriteLine("NOTE: Splitting changeset due to different comment: {0} != {1}:", change.Revisions.Last.Value.Comment, revision.Comment);
-                                    logger.WriteLine("NOTE: Splitting changeset due to different comment: {0} != {1}:", lastRevision.Comment, revision.Comment);
-                                    flush = true;
-                                }
-
                             }
+
 
 
                             if (flush)
                             {
                                 AddChangeset(change);
-                                if (flushedUsers == null)
-                                {
-                                    flushedUsers = new LinkedList<string>();
-                                }
                                 flushedUsers.AddLast(user);
                             }
                             else if (user == pendingUser)
@@ -195,13 +227,9 @@ namespace Hpdi.Vss2Svn
                                 pendingChange = change;
                             }
                         }
-                        if (flushedUsers != null)
-                        {
-                            foreach (string user in flushedUsers)
-                            {
-                                pendingChangesByUser.Remove(user);
-                            }
-                        }
+
+                        foreach (string user in flushedUsers)
+                            pendingChangesByUser.Remove(user);
 
                         // if no pending change for user, create a new one
                         if (pendingChange == null)
@@ -279,9 +307,8 @@ namespace Hpdi.Vss2Svn
             return node?.Value??change.Revisions.Last.Value;
         }
         
-        private string FindCommentForNullCommentAction(Revision rev)
+        private Revision FindCorrespondingAction(Revision rev, VssActionType actionType)
         {
-
             if (rev.Action.Type != VssActionType.Edit && rev.Action.Type != VssActionType.Label)
             {
                 var action = rev.Action as VssNamedAction;
@@ -293,8 +320,8 @@ namespace Hpdi.Vss2Svn
                     if (revision.Action.Type != VssActionType.Edit && revision.Action.Type != VssActionType.Label)
                     {
                         var targetaction = revision.Action as VssNamedAction;
-                        if (action.Name.PhysicalName == targetaction.Name.PhysicalName && targetaction.Type == VssActionType.Create && revision.Comment != null)
-                            return revision.Comment;
+                        if (action.Name.PhysicalName == targetaction.Name.PhysicalName && targetaction.Type == actionType && revision.Comment != null)
+                            return revision;
                     }
                 }
 
@@ -330,8 +357,8 @@ namespace Hpdi.Vss2Svn
                         if (revision.Action.Type != VssActionType.Edit && revision.Action.Type != VssActionType.Label)
                         {
                             var targetaction = revision.Action as VssNamedAction;
-                            if (action.Name.PhysicalName == targetaction.Name.PhysicalName && targetaction.Type == VssActionType.Create && revision.Comment != null)
-                                return revision.Comment;
+                            if (action.Name.PhysicalName == targetaction.Name.PhysicalName && targetaction.Type == actionType && revision.Comment != null)
+                                return revision;
                         }
                     }
 
@@ -342,8 +369,8 @@ namespace Hpdi.Vss2Svn
                         if (revision.Action.Type != VssActionType.Edit && revision.Action.Type != VssActionType.Label)
                         {
                             var targetaction = revision.Action as VssNamedAction;
-                            if (action.Name.PhysicalName == targetaction.Name.PhysicalName && targetaction.Type == VssActionType.Create && revision.Comment != null)
-                                return revision.Comment;
+                            if (action.Name.PhysicalName == targetaction.Name.PhysicalName && targetaction.Type == actionType && revision.Comment != null)
+                                return revision;
                         }
                     }
             }

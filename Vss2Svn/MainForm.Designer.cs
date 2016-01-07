@@ -58,7 +58,7 @@
             this.logLabel = new System.Windows.Forms.Label();
             this.cancelButton = new System.Windows.Forms.Button();
             this.changesetGroupBox = new System.Windows.Forms.GroupBox();
-            this.mergeAcrossDifferentUserCheckBox = new System.Windows.Forms.CheckBox();
+            this.excludeAllDestroyedItemsCheckBox = new System.Windows.Forms.CheckBox();
             this.label4 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
             this.sameCommentUpDown = new System.Windows.Forms.NumericUpDown();
@@ -354,7 +354,7 @@
             // 
             this.changesetGroupBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.changesetGroupBox.Controls.Add(this.mergeAcrossDifferentUserCheckBox);
+            this.changesetGroupBox.Controls.Add(this.excludeAllDestroyedItemsCheckBox);
             this.changesetGroupBox.Controls.Add(this.label4);
             this.changesetGroupBox.Controls.Add(this.label3);
             this.changesetGroupBox.Controls.Add(this.sameCommentUpDown);
@@ -368,16 +368,16 @@
             this.changesetGroupBox.TabStop = false;
             this.changesetGroupBox.Text = "Changeset Building";
             // 
-            // mergeAcrossDifferentUserCheckBox
+            // excludeAllDestroyedItemsCheckBox
             // 
-            this.mergeAcrossDifferentUserCheckBox.AutoSize = true;
-            this.mergeAcrossDifferentUserCheckBox.Location = new System.Drawing.Point(81, 71);
-            this.mergeAcrossDifferentUserCheckBox.Name = "mergeAcrossDifferentUserCheckBox";
-            this.mergeAcrossDifferentUserCheckBox.Size = new System.Drawing.Size(190, 17);
-            this.mergeAcrossDifferentUserCheckBox.TabIndex = 11;
-            this.mergeAcrossDifferentUserCheckBox.Text = "and combine across different users";
-            this.toolTip1.SetToolTip(this.mergeAcrossDifferentUserCheckBox, "Combine revisions by different users");
-            this.mergeAcrossDifferentUserCheckBox.UseVisualStyleBackColor = true;
+            this.excludeAllDestroyedItemsCheckBox.AutoSize = true;
+            this.excludeAllDestroyedItemsCheckBox.Location = new System.Drawing.Point(81, 71);
+            this.excludeAllDestroyedItemsCheckBox.Name = "excludeAllDestroyedItemsCheckBox";
+            this.excludeAllDestroyedItemsCheckBox.Size = new System.Drawing.Size(339, 17);
+            this.excludeAllDestroyedItemsCheckBox.TabIndex = 11;
+            this.excludeAllDestroyedItemsCheckBox.Text = "[experimental] and combine revisions separated by destroyed items";
+            this.toolTip1.SetToolTip(this.excludeAllDestroyedItemsCheckBox, "Exclude destroyed items and combine revisions before & after");
+            this.excludeAllDestroyedItemsCheckBox.UseVisualStyleBackColor = true;
             // 
             // label4
             // 
@@ -524,7 +524,7 @@
         private System.Windows.Forms.ToolTip toolTip1;
         private System.Windows.Forms.Button quitButton;
         private System.Windows.Forms.CheckBox transcodeCheckBox;
-        private System.Windows.Forms.CheckBox mergeAcrossDifferentUserCheckBox;
+        private System.Windows.Forms.CheckBox excludeAllDestroyedItemsCheckBox;
     }
 }
 
